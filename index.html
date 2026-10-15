@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anatomie Lernkarten</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#e8eef1;--ink:#14232b;--mute:#5a6b74;--front:#fff;--back:#17424f;--backink:#eaf4f6;--ok:#2b7a57;--no:#b5413a;--line:#c5d2d8;--chip:#d6e1e6}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f171b;--ink:#e6eef1;--mute:#93a5ae;--front:#1a262c;--back:#0d3b47;--backink:#e6f3f6;--ok:#58c08f;--no:#e5827b;--line:#2b3b43;--chip:#22333b}}
+:root[data-theme="dark"]{--bg:#0f171b;--ink:#e6eef1;--mute:#93a5ae;--front:#1a262c;--back:#0d3b47;--backink:#e6f3f6;--ok:#58c08f;--no:#e5827b;--line:#2b3b43;--chip:#22333b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font:600 22px/1.2 Georgia,"Iowan Old Style",serif;margin:0 0 4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:var(--mute);margin:8px 0}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:14px}
+.prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.scene{perspective:1200px}
+.card{position:relative;min-height:280px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s;outline-offset:4px;border-radius:14px}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:22px;display:flex;flex-direction:column;justify-content:center;border:1px solid var(--line);overflow:auto}
+.front{background:var(--front);font:500 21px/1.4 Georgia,"Iowan Old Style",serif}
+.back{background:var(--back);color:var(--backink);transform:rotateY(180deg);font-size:18px;line-height:1.5}
+.tag{position:absolute;top:10px;left:16px;font-size:12px;opacity:.7;font-family:system-ui,sans-serif;font-weight:400}
+.hint{text-align:center;color:var(--mute);font-size:13px;margin:10px 0}
+.row{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;border:1px solid var(--line);background:var(--front);color:var(--ink);border-radius:10px;padding:12px;font:inherit;cursor:pointer}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.no{background:var(--no);border-color:var(--no);color:#fff}
+.btn:focus-visible,.chip:focus-visible,.card:focus-visible{outline:3px solid var(--ok)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.tools .btn{flex:none;padding:8px 12px;font-size:14px}
+.done{text-align:center;padding:48px 16px}
+@media(prefers-reduced-motion:reduce){.card{transition:none}}
+</style></head><body><main>
+<h1>Anatomie Lernkarten</h1>
+<p class="sub">Karte antippen zum Umdrehen. Danach „Gewusst“ oder „Nochmal“.</p>
+<div class="chips" id="chips"></div>
+<div class="bar"><span id="pos"></span><span id="stat"></span></div>
+<div class="prog"><i id="pb"></i></div>
+<div class="scene"><div class="card" id="card" tabindex="0" role="button" aria-label="Karte umdrehen"><div class="face front" id="f"></div><div class="face back" id="b"></div></div></div>
+<p class="hint">Leertaste dreht um, Pfeiltasten wechseln die Karte.</p>
+<div class="row"><button class="btn no" id="no">Nochmal</button><button class="btn ok" id="ok">Gewusst</button></div>
+<div class="tools"><button class="btn" id="prev">Zurück</button><button class="btn" id="next">Weiter</button><button class="btn" id="shuf">Mischen</button><button class="btn" id="open" aria-pressed="false">Nur offene</button><button class="btn" id="reset">Fortschritt löschen</button></div>
+</main>
+<script>
+var C=["1 Einführung","2 Zellbiologie","3 Epithel","4 Bindegewebe","5 Knorpel","6 Knochen","7 Ossifikation","8 Gelenke","9 Muskellehre","10 Muskelhistologie","11 Muskelphysiologie","12 Hilfsstrukturen"];
+// [Kapitel, Nr, Frage, Antwort]
+var D=[
+[0,1,"Was bedeutet Anatomie wörtlich, und womit beschäftigt sie sich?","„Auseinanderschneiden, Zerteilen“ (griech.); Lehre vom Bau des menschlichen Körpers."],
+[0,2,"Wie wird die Anatomie grob eingeteilt?","Makroskopische Anatomie (systemisch, topographisch, deskriptiv), mikroskopische Anatomie (Zytologie, Histologie) und Embryologie."],
+[0,3,"Worin unterscheiden sich systemische und topographische Anatomie?","Systemisch ordnet nach funktionellen Organsystemen, topographisch betrachtet die Lagebeziehungen der Strukturen."],
+[0,4,"Was untersuchen Zytologie und Histologie?","Zytologie = Lehre von den Zellen, Histologie = Lehre von den Geweben (zusammen: mikroskopische Anatomie)."],
+[0,5,"Was gehört zum aktiven und was zum passiven Bewegungsapparat?","Aktiv: quergestreifte Skelettmuskulatur. Passiv: Skelett (Knochen, Knorpel, Bänder) und Gelenke."],
+[0,6,"Nenne die drei Hauptebenen und die drei Hauptachsen.","Ebenen: Frontal-, Horizontal-, Sagittalebene. Achsen: Longitudinal-, Horizontal-, Sagittalachse."],
+[0,7,"(Erg.) Wie teilen die drei Hauptebenen den Körper?","Frontalebene: vorne/hinten. Sagittalebene: rechts/links. Horizontalebene: oben/unten."],
+[0,8,"(Erg.) In welcher Ebene und um welche Achse findet Beugung/Streckung statt?","In der Sagittalebene um die Horizontalachse."],
+[0,161,"Wie wird der Körper regional (topographisch) gegliedert?","Obere und untere Extremität sowie Stamm mit Caput (Kopf), Collum (Hals) und Truncus (Rumpf); der Rumpf umfasst Thorax (Brustkorb), Abdomen (Bauch) und Pelvis (Becken)."],
+[0,162,"In welche drei Bereiche gliedert sich die funktionelle (systemische) Anatomie?","Bewegungsapparat, Eingeweide und Kommunikationsapparat."],
+[0,163,"Welche Organsysteme gehören zu den Eingeweiden?","Herz-Kreislauf-System, hämolymphatisches System, endokrines System, Atmungs-, Verdauungs- und Harnsystem sowie männliches und weibliches Genitalsystem."],
+[0,164,"Was gehört zum Kommunikationsapparat?","Zentrales und peripheres Nervensystem sowie die Sinnesorgane."],
+[1,9,"Aus welchen drei Hauptbestandteilen besteht eine typische Zelle?","Zellmembran, Zytoplasma (Zytosol + Organellen) und Zellkern."],
+[1,10,"Welche Aufgaben hat der Zellkern?","Steuerung des Stoffwechsels, Speicherung fast der gesamten Erbinformation, Verdopplung der DNA vor der Teilung, Transkription."],
+[1,11,"Was ist der Unterschied zwischen Transkription und Translation?","Transkription: Abschrift der DNA auf mRNA (im Kern). Translation: Umsetzung der mRNA in ein Protein (am Ribosom)."],
+[1,12,"Was sind Ribosomen und wo kommen sie vor?","Ort der Eiweißsynthese, aus rRNA und Proteinen; frei im Zytosol oder am rauen ER."],
+[1,13,"Wie sind Mitochondrien aufgebaut und was leisten sie?","Äußere und stark gefaltete innere Membran (Cristae); Stoffwechsel mit Sauerstoff, dabei entsteht ATP („Kraftwerk“)."],
+[1,14,"Was ist ATP und wofür braucht der Skelettmuskel es?","Adenosintriphosphat, universeller Energieträger; liefert u. a. die Energie für die Kontraktion."],
+[1,15,"Wodurch unterscheiden sich raues und glattes endoplasmatisches Retikulum?","Raues ER: mit Ribosomen besetzt, stellt Sekretproteine her. Glattes ER: Hormon- und Fettsynthese, Calciumspeicher."],
+[1,16,"Welche Funktion hat der Golgi-Apparat?","Teilweise Modifikation und Sortierung von Proteinen aus dem ER; schnürt Golgi-Vesikel ab."],
+[1,17,"Was machen Lysosomen?","„Recyclingstation“: verdauen Moleküle und Partikel aus der Zelle oder von außen (nach Endozytose)."],
+[1,18,"Nenne die drei Bestandteile des Zytoskeletts und ihre Funktion.","Mikrofilamente (Aktin/Myosin, Filamentbündel), Mikrotubuli (Röhren, Stützfunktion), Intermediärfilamente (quervernetzte Faserproteine, mechanische Stabilität)."],
+[1,19,"Welche sechs Funktionen hat die Zellmembran?","Abgrenzung; Stofftransport (selektive Permeabilität); Signaltransduktion; Zellerkennung (Glykokalyx); elektrische Erregbarkeit; Zellkontakte."],
+[1,20,"Wie ist die Zellmembran aufgebaut?","Lipiddoppelschicht aus amphiphilen Lipiden (meist Phospholipide), oft mit Cholesterin."],
+[1,21,"Was bedeutet amphiphil, und was bewirkt Cholesterin in der Membran?","Amphiphil = wasser- und fettliebend. Cholesterin erhöht die Fluidität."],
+[1,22,"Wie unterscheiden sich passiver und aktiver Transport?","Passiv: ohne Energie, mit dem Gradienten. Aktiv: mit ATP, gegen den Gradienten."],
+[1,23,"Welche Stoffe können frei durch die Zellmembran diffundieren?","Gase (O₂, CO₂), geringe Mengen Wasser, verschiedene Fette und Hormone."],
+[1,24,"Was sind Porine und Aquaporine?","Passive Kanalproteine mit Öffnung nach Größe/Passung; Aquaporine lassen Wasser passieren."],
+[1,25,"Welche Typen von Ionenkanälen gibt es?","Offene, spannungsabhängige und ligandenabhängige Kanäle; jeweils spezifisch für ein Ion."],
+[1,26,"Was bedeuten Uniport, Symport, Antiport?","Ein Stoff; zwei Stoffe in gleicher Richtung; zwei Stoffe in entgegengesetzter Richtung."],
+[1,27,"Nenne drei Ionenpumpen.","Na⁺-K⁺-ATPase, Protonenpumpe im Magen, Ca²⁺-ATPase im sarkoplasmatischen Retikulum des Skelettmuskels."],
+[1,28,"Wofür ist die Na⁺-K⁺-ATPase wichtig?","Für das Membranpotenzial (Ionenpumpe unter ATP-Verbrauch)."],
+[1,29,"Was ist die Glykokalyx und wozu dient sie?","Kohlenhydratketten (Oligosaccharide) an der Zellaußenseite; Schutz und Zellerkennung (Antigenpräsentation)."],
+[1,30,"Welche drei Arten von Zellkontakten gibt es?","Mechanisch (Desmosomen, Hemidesmosomen, Zonula adhaerens), Kommunikation (Gap junctions, Synapsen), Verschluss (tight junctions)."],
+[1,31,"Welche Aufgabe haben tight junctions?","Sie „versiegeln“ den Raum zwischen benachbarten Epithelzellen."],
+[1,32,"Wozu dienen Gap junctions?","Chemische oder elektrische Kommunikation zwischen Zellen (Kommunikationskontakt)."],
+[2,33,"Was kennzeichnet Epithelgewebe?","Dicht zusammenliegende, flächenhafte Zellverbände ohne Zwischenzellsubstanz, mit apikal/basal Ausrichtung auf einer Basalmembran."],
+[2,34,"Was ist die Basalmembran?","Das „Grundhäutchen“, Verbindungsstruktur zwischen Epithel und umliegendem Bindegewebe."],
+[2,35,"Welche Funktionen haben Epithelien?","Schutz (thermisch, chemisch, mechanisch), Keimbarriere, Schutz vor Flüssigkeitsverlust, Resorption, Sekretion, Reizaufnahme."],
+[2,36,"Was sind Endothel und Mesothel?","Endothel = Auskleidung von Blut- und Lymphgefäßen. Mesothel = Überzug der inneren Organe."],
+[2,37,"Nach welchen drei Kriterien werden Oberflächenepithelien eingeteilt?","Form (platt, isoprismatisch, hochprismatisch), Anordnung (einschichtig, mehrreihig, mehrschichtig), Oberflächendifferenzierung (verhornt/unverhornt, Flimmerhärchen/Mikrovilli)."],
+[2,38,"Worin unterscheiden sich exokrine und endokrine Drüsen?","Exokrin: Abgabe über Ausführungsgänge an Haut/Schleimhaut. Endokrin: Hormone direkt ins Blut."],
+[3,39,"Woraus bestehen alle Binde- und Stützgewebe?","Aus Zellen und Extrazellulärmatrix (Grundsubstanz + Fasern)."],
+[3,165,"Welche Funktionen haben Binde- und Stützgewebe?","Formgebung und Formerhaltung des Körpers, Stoffaustausch und immunologische Abwehrprozesse."],
+[3,40,"Welche ortsständigen Zellen bauen die EZM auf?","Fibroblasten (Bindegewebe), Chondroblasten (Knorpel), Osteoblasten (Knochen)."],
+[3,41,"Welche mobilen Zellen kommen im Bindegewebe vor?","Zellen des Immunsystems: Leukozyten, Lymphozyten, Makrophagen u. a."],
+[3,166,"Was ist der Unterschied zwischen ungeformter und geformter Extrazellulärmatrix?","Ungeformt = Grundsubstanz (Stützfunktion, Stoffaustausch). Geformt = Fasern (strukturgebende Elemente)."],
+[3,42,"Woraus besteht die Grundsubstanz?","Proteoglykane (z. B. Aggrecan), Glykosaminoglykane (z. B. Hyaluronat) und viel Wasser."],
+[3,43,"Warum ist die Grundsubstanz verformbar, aber nicht komprimierbar?","Ihre negative Ladung bindet viel Wasser."],
+[3,44,"Welche Eigenschaften haben Kollagenfasern?","Zugfest, kaum dehnbar; häufigstes Protein; liegen als Fibrillen vor; Bildung vitamin-C-abhängig."],
+[3,45,"Wo kommt Kollagen Typ I vor?","Haut, Bänder, Sehnen, Knochen, Organkapseln, Hirnhäute (häufigster Typ)."],
+[3,46,"Wo kommt Kollagen Typ II vor?","Knorpel und im Nucleus pulposus der Bandscheibe."],
+[3,47,"Was bildet Kollagen Typ III, und wo kommt es vor?","Die retikulären Fasern (Gitterfasern) in lymphatischen Organen (Milz, Lymphknoten, Knochenmark)."],
+[3,48,"Woraus bestehen elastische Fasern und wo kommen sie vor?","Aus Elastin; hochdehnbar; Haut, Lunge, Gefäßwände, Lig. flavum."],
+[3,49,"Was ist Mesenchym?","Embryonales Bindegewebe aus Zellen und Grundsubstanz ohne Fasern; „Vorläufergewebe“."],
+[3,50,"Was ist retikuläres Bindegewebe und wo kommt es vor?","Zellreiches dreidimensionales Netzwerk als Stützgerüst lymphatischer Organe; Knochenmark, Lymphknoten."],
+[3,51,"Welche Funktionen hat Fettgewebe?","Energiespeicher, Druckpolster, Wärmeisolation, Hormonsekretion (Leptin, Östrogen)."],
+[3,52,"Was ist lockeres kollagenes Bindegewebe und was leistet es?","Häufigstes Bindegewebe (v. a. Kollagen I und III); füllt den Zwischenzellraum, Wasserspeicher, Manschette um Gefäß-Nerven-Straßen, Ort für Immunreaktionen."],
+[3,53,"Wie unterscheiden sich parallelfaseriges und geflechtartiges straffes Bindegewebe?","Parallelfaserig: Sehnen, Bänder, Aponeurosen. Geflechtartig: Periost, Gelenkkapsel (Membrana fibrosa), Organkapseln, Hirnhäute."],
+[3,54,"Was ist eine Aponeurose?","Eine flächige Sehne."],
+[4,55,"Was bedeutet bradytrophes Gewebe und was folgt daraus für Knorpel?","Wenig Stoffwechsel; keine Nerven, Blut- oder Lymphgefäße, kaum Regeneration."],
+[4,56,"Wie wird Knorpel ernährt?","Durch Wechsel von Be- und Entlastung (Pump-Saug-Mechanismus)."],
+[4,57,"Worin unterscheiden sich Chondrozyten und Chondroblasten?","Chondrozyten produzieren Matrix und Fasern. Chondroblasten sind teilungsfähig; beim Erwachsenen nur unter dem Perichondrium."],
+[4,58,"Was kennzeichnet hyalinen Knorpel und wo kommt er vor?","Druck- und zugfest, Kollagen Typ II; Gelenkknorpel, Rippenknorpel, Trachealspangen, embryonales Skelett."],
+[4,59,"Was kennzeichnet Faserknorpel und wo kommt er vor?","Vor allem zugfest, Kollagen Typ I, wenig Matrix; Menisken, Anulus fibrosus, Symphyse."],
+[4,60,"Was kennzeichnet elastischen Knorpel und wo kommt er vor?","Sehr druck- und biegeelastisch, viele elastische Fasern; Ohrmuschel, Kehldeckel."],
+[4,61,"Warum kann sich Gelenkknorpel nicht regenerieren?","Er hat kein Perichondrium (dort liegen die teilungsfähigen Chondroblasten) und ist gefäßfrei."],
+[4,62,"Welche Funktionen hat Gelenkknorpel?","Druckelastizität, Stoßdämpfung, gleichmäßige Kraftverteilung, Gleiten der Gelenkflächen."],
+[4,167,"(Erg.) Wie heißen die vier Zonen des Gelenkknorpels laut Lehrbüchern?","Tangentialzone, Übergangszone, Radiärzone und mineralisierte Zone (Kalkknorpel). Das Skript nennt nur „4 Zonen mit unterschiedlichem Faserverlauf“."],
+[4,63,"Was passiert im Gelenkknorpel bei längerer Belastung?","Wasser wird herausgepresst, er wird dünner, die Proteoglykansynthese nimmt ab."],
+[4,64,"Aus welchen zwei Schichten besteht die Gelenkkapsel?","Innen Membrana synovialis (bildet Synovia), außen Membrana fibrosa (straffes kollagenes Bindegewebe, mit Periost verbunden, oft durch Bänder verstärkt)."],
+[4,65,"Welche Funktionen hat die Synovia?","Ernährung des Knorpels per Diffusion, Gelenkschmiere, zusätzliche Stoßdämpfung (Volumen nur 3–5 ml)."],
+[5,66,"Welche Funktionen hat der Knochen?","Statik, Stabilität, Form; Muskelansatz; Mineralspeicher (Calcium, Phosphat); Blutbildung im Knochenmark."],
+[5,67,"Welche Aufgaben haben Osteoblasten, Osteozyten und Osteoklasten?","Osteoblasten bauen auf/um. Osteozyten sind eingemauerte Osteoblasten im mineralisierten Knochen. Osteoklasten bauen ab/um."],
+[5,68,"Woraus besteht die Extrazellulärmatrix des Knochens?","Organisch: Kollagen Typ I und Glykoproteine. Anorganisch: Calcium, Phosphat, Magnesium, Eisen u. a."],
+[5,69,"Wie ist das Periost aufgebaut und was leistet es?","Straffes Bindegewebe; außen Stratum fibrosum, innen Stratum osteogenicum (Osteoblasten); schmerzempfindlich; Schutz, Heilung, Dickenwachstum, Ernährung."],
+[5,70,"Was ist das Endost?","Innere Knochenhaut auf allen inneren Oberflächen (Spongiosatrabekel) mit Osteoblastensaum."],
+[5,71,"Worin unterscheiden sich rotes und gelbes Knochenmark?","Rot: blutbildend, retikuläres Bindegewebe (Epiphysen, platte Knochen). Gelb: Fettmark in den Markräumen Erwachsener."],
+[5,72,"Wie unterscheiden sich Geflecht- und Lamellenknochen?","Geflechtknochen: schnell gebildet, ungeordnet, weniger mineralisiert, instabiler (embryonal, Frakturheilung). Lamellenknochen: geordnet, belastungsorientiert, entsteht durch Umbau."],
+[5,73,"Was ist ein Osteon?","Lamellen um ein zentrales Gefäß (Havers-Kanal), der zentrale Baustein des Lamellenknochens in der Kompakta."],
+[5,74,"Was sind Schaltlamellen und Volkmann-Kanäle?","Schaltlamellen: Lamellen zwischen den Osteonen. Volkmann-Kanäle: quer verlaufende Blutgefäße."],
+[5,75,"Welches Prinzip steckt hinter der Spongiosa?","Leichtbauprinzip: dünne Trabekel, entlang der größten Belastung ausgerichtet (trajektoriell); Mark zwischen den Trabekeln."],
+[6,76,"Worin unterscheiden sich desmale und chondrale Ossifikation?","Desmal: direkt aus Bindegewebe. Chondral: indirekt aus Knorpel (Ersatzknochenbildung)."],
+[6,77,"Was ist perichondrale und was enchondrale Ossifikation?","Perichondral: Verknöcherung von außen (vom Perichondrium). Enchondral: von innen."],
+[6,78,"Was entsteht bei jeder Ossifikation zuerst, und was danach?","Erst Geflechtknochen, dann Umbau zu Lamellenknochen (auch bei Frakturheilung)."],
+[6,168,"Was ist das Primärskelett (Primordialskelett) und woraus entsteht es?","Ein Skelett aus hyalinem Knorpel mit Perichondrium, das sich aus embryonalem Mesenchym bildet; Ausgangspunkt der chondralen Ossifikation."],
+[6,79,"Wie läuft die perichondrale Ossifikation ab?","Osteoblasten bilden am Perichondrium eine Knochenschicht; Knorpelzellen ohne Anschluss sterben ab; Osteoblasten bilden weiter Osteoid."],
+[6,80,"Wie entstehen primäre und sekundäre Knochenkerne?","Primär: Gefäßeintritt in den Schaft, Osteoblasten und Chondroklasten lagern sich an. Sekundär: Gefäßeintritt in die Epiphysen."],
+[6,81,"Was ist die Epiphysenfuge und wann verschwindet sie?","Knorpelzone zwischen primären und sekundären Knochenkernen; bleibt bis zum Wachstumsende, dann Epiphysenfugenschluss."],
+[6,82,"Welche Hormone steuern das pubertäre Längenwachstum?","Wachstumshormon (Somatotropin) sowie Östrogen/Testosteron."],
+[6,83,"Wie funktioniert das Breitenwachstum des Knochens?","Osteoblasten am Periost bilden fortwährend Knochen, Osteoklasten bauen gleichzeitig ab; Regulation durch Belastung und Hormone (Östrogen, Calcitriol)."],
+[7,84,"Was ist ein Gelenk?","Eine Verbindungsstelle zwischen zwei Knochen, die definierte Bewegungen zulässt."],
+[7,85,"Wie unterscheiden sich Diarthrose und Synarthrose?","Diarthrose (echtes Gelenk): Gelenkspalt, diskontinuierlich, gut beweglich. Synarthrose (unechtes Gelenk): kein Gelenkspalt, kontinuierliche Verbindung, schlecht beweglich."],
+[7,86,"Welche Bestandteile hat eine Diarthrose?","Gelenkkopf und Gelenkpfanne, Gelenkknorpel, Gelenkspalt, vollständige Gelenkkapsel, Synovia in der Gelenkhöhle."],
+[7,87,"Welche drei Haftarten (Synarthrosen) gibt es?","Bandhaft (Syndesmose, Bindegewebe), Knorpelhaft (Synchondrose), Knochenhaft (Synostose, verknöchert)."],
+[7,88,"Welche Beispiele nennt das Skript für Synchondrosen?","Hyalin: Epiphysenfugen, Rippenknorpel. Faserknorpel: Schambeinfuge."],
+[7,89,"Nenne die sechs Gelenkformen und die Sonderform.","Kugel-, Ellipsoid- (Ei-), Sattel-, Scharnier-, Rad- (Zapfen-), planes Gelenk; Sonderform: straffes Gelenk (Amphiarthrose)."],
+[7,90,"(Erg.) Wie viele Hauptbewegungsachsen hat ein Kugelgelenk, und wo kommt es vor?","Drei; Hüft- und Schultergelenk."],
+[7,91,"(Erg.) Welche Gelenkform ist das Daumensattelgelenk, und wie viele Achsen hat sie?","Sattelgelenk mit zwei Bewegungsachsen."],
+[8,92,"Was gehört zum aktiven und was zum passiven Anteil des Bewegungsapparats?","Aktiv: Muskulatur. Passiv: Knochen, Knorpel, Bänder, Gelenke."],
+[8,93,"Welche Muskelformen unterscheidet das Skript?","Mehrköpfig (zwei-, drei-, vierköpfig), mehrbäuchig (zwei-, mehrbäuchig), ringförmiger Schließmuskel, platter Muskel."],
+[8,94,"Wie werden Muskeln nach Faserverlauf eingeteilt?","Parallelfaserig (spindelförmig, M. fusiformis) und gefiedert (einfach, doppelt, komplex)."],
+[8,95,"(Erg.) Welchen Vorteil haben gefiederte Muskeln?","Viele kurze Fasern, hohe Kraft bei geringerem Verkürzungsweg."],
+[8,96,"Was ist der Unterschied zwischen ein- und zweigelenkigen Muskeln?","Eingelenkige wirken auf ein Gelenk, zweigelenkige überspannen zwei Gelenke."],
+[8,97,"Was bedeuten Origo und Insertio?","Origo = Ursprung, Insertio = Ansatz des Muskels."],
+[8,98,"Was bedeuten Punctum fixum und Punctum mobile?","Fester bzw. beweglicher Punkt eines Muskels bei einer Bewegung."],
+[8,99,"Was sind Agonist, Antagonist und Synergist?","Agonist: Spieler, führt die Bewegung aus. Antagonist: Gegenspieler. Synergist: Mitspieler (direkt oder indirekt)."],
+[9,100,"Was ist die Besonderheit des Muskelgewebes?","Kontraktion (Verkürzung) unter Einfluss des Nervensystems; chemische Energie wird in mechanische Energie und Wärme umgewandelt."],
+[9,101,"Welche Funktionen hat Muskelgewebe?","Bewegung, Statik, Atmung/Herztätigkeit/Kreislauf, Wärmeproduktion (80–85 %), Energieumsatz, Schutz innerer Organe."],
+[9,102,"Wie unterscheiden sich die drei Muskelgewebearten in Zellkernen und Steuerung?","Glatt: spindelförmig, 1 Kern, unwillkürlich. Skelett: lang, viele randständige Kerne, willkürlich. Herz: verzweigt, ein Kern, unwillkürlich (Sinusknoten)."],
+[9,103,"Was sind Glanzstreifen?","Haft- und Kommunikationskontakte zwischen Herzmuskelzellen."],
+[9,104,"Welche Muskelart ermüdet schnell, welche kaum?","Skelettmuskulatur schnell (hoher Energieverbrauch); glatte und Herzmuskulatur kaum."],
+[9,105,"Welche Grundeigenschaften haben Skelettmuskelzellen?","Erregbarkeit, Kontraktilität, Dehnbarkeit, Elastizität."],
+[9,106,"Was sind Myofibrillen und woraus bestehen sie?","Fadenförmige kontraktile Eiweißfäden in Längsrichtung; Kette von Sarkomeren aus Aktin und Myosin."],
+[9,107,"Was ist ein Sarkomer, und wie sind Aktin und Myosin gebaut?","Kleinste Baueinheit der Myofibrille. Aktin: dünne, helle Filamente. Myosin: dicke, dunkle Filamente mit Köpfchen."],
+[9,108,"Wo ist Aktin verankert?","In den Z-Streifen."],
+[9,109,"Was ist das sarkoplasmatische Retikulum (SR)?","Das L-System; spezielles ER der Muskelzelle, Calciumspeicher."],
+[9,110,"Wofür stehen Myoglobin und Glykogen in der Muskelzelle?","Myoglobin = Sauerstoffspeicher. Glykogen = Energieträger (Speicherform der Glucose)."],
+[9,111,"Nenne die Bindegewebsschichten des Skelettmuskels von innen nach außen.","Endomysium, Perimysium (internum/externum), Epimysium, Muskelfaszie."],
+[9,112,"Welche Rolle hat das Endomysium?","Umgibt jede Muskelfaser, enthält Gefäße und Nerven, wichtig für die Reißfestigkeit."],
+[9,113,"Was leistet das Perimysium?","Umhüllt Muskelfaserbündel (und mehrere Bündel) und schützt vor Überdehnung."],
+[9,114,"Was umgeben Epimysium und Muskelfaszie?","Epimysium: den ganzen Muskel. Faszie: umkleidet das Epimysium und bildet ein Führungsrohr."],
+[9,115,"Wie können Kollagenfasern im Muskel angeordnet sein?","Parallel zu den Sarkomeren (Dehnung bei passiver Dehnung) oder in Serie (Dehnung bei Anspannung)."],
+[9,116,"Was passiert im Muskel bei Immobilisation, und was folgt daraus für die Therapie?","Neues, ungeordnetes Bindegewebe; kontraktile Anteile verkürzen sich schneller. Daher zunächst langsam und vorsichtig dehnen."],
+[10,117,"Was beschreibt der Querbrückenzyklus?","Die calciumabhängige Interaktion von Aktin und Myosin, die zur Verkürzung der Muskelfaser führt (Filamentgleittheorie)."],
+[10,118,"Wie sieht die Ruhestellung im Querbrückenzyklus aus?","Die Myosinbindungsstelle am Aktin ist durch Tropomyosin blockiert."],
+[10,119,"Was passiert bei Aufrichten/Vorspannung?","ATP am Myosin wird in ADP und Phosphat gespalten; der Myosinkopf richtet sich auf."],
+[10,120,"Wie kommt es zur Querbrückenverbindung?","Bei Aktivierung wird Calcium aus dem SR freigesetzt, gibt die Bindungsstelle frei, und der Myosinkopf bindet an Aktin."],
+[10,121,"Was geschieht in der Gleitphase?","Phosphat wird frei, der Myosinkopf kippt um ca. 45°, die Filamente gleiten, das Sarkomer verkürzt sich."],
+[10,122,"Wie löst sich die Querbrücke?","Durch neues ATP löst sich der Myosinkopf vom Aktin."],
+[10,123,"Was entscheidet nach dem Lösen, ob ein neuer Zyklus beginnt?","Calcium hoch → neuer Zyklus. Calcium niedrig → Bindungsstelle wieder blockiert, Ende."],
+[10,124,"Welche Aufgaben hat Calcium bei der Kontraktion?","Gibt die Bindungsstelle frei, aktiviert die ATPase (Vorspannung), aktiviert Enzyme des Glykogenabbaus."],
+[10,125,"Warum ist ATP auch für die Erschlaffung nötig?","Nur mit ATP löst sich der Myosinkopf vom Aktin („Weichmacherfunktion“)."],
+[10,169,"Was ist ein Alpha-Motoneuron?","Der Bewegungsnerv (motorisches Neuron), der Skelettmuskelfasern innerviert; Teil der motorischen Einheit und Ausgangspunkt der Erregung an der motorischen Endplatte."],
+[10,126,"Was ist die motorische Endplatte?","Chemische Synapse zwischen Alpha-Motoneuron und Muskelfaser; Transmitter Acetylcholin; das Endplattenpotenzial löst die Erregung aus."],
+[10,127,"Was besagt das Alles-oder-Nichts-Prinzip?","Die Kontraktion einer Muskelfaser durch ein Motoneuron erfolgt ganz oder gar nicht; bei Haltearbeit wechseln sich Fasern rotierend ab."],
+[10,128,"Was ist eine motorische Einheit?","Ein Motoneuron und alle von ihm innervierten Muskelfasern."],
+[10,129,"Wie wird die Muskelspannung gesteuert?","Über die Anzahl aktivierter motorischer Einheiten; Aktivierung in fester Reihenfolge (erst klein, dann groß)."],
+[10,130,"Welche Aktivierungsgrade nennt das Skript?","Normal ca. 30 % der Muskelfasern, bei großem Krafteinsatz ca. 60 %; darüber nur in Extremsituationen (Hemmung durch absteigende Neurone). Zahlen bitte prüfen."],
+[10,131,"Was besagt das Größenprinzip?","Geringe Belastung → kleine Einheiten mit niedriger Reizschwelle (eher Typ I). Stärkere Belastung → größere Einheiten (eher Typ II)."],
+[10,132,"Was ist die elektromechanische Kopplung?","Umwandlung des elektrischen Reizes der Nervenzelle in mechanische Bewegung der Myofilamente."],
+[10,133,"Wie wird die Kontraktionsstärke reguliert?","Summation motorischer Einheiten, Summation der Einzelzuckungen/Frequenzerhöhung (bis zum vollständigen Tetanus), Vordehnung des Sarkomers."],
+[10,134,"Warum braucht es Summation von Einzelzuckungen?","Eine Einzelzuckung verkürzt das Sarkomer nur minimal; im vollständigen Tetanus wird die maximale Kraft erreicht."],
+[10,170,"(Erg.) Was bedeutet Vordehnung des Sarkomers für die Kraft?","Bei optimaler Vordehnung überlappen Aktin und Myosin ideal, die Kraft ist maximal. Bei zu kurzem oder zu langem Sarkomer sinkt sie. Das Skript nennt die Vordehnung nur als Stichwort."],
+[10,135,"Was ist die auxotone Kontraktion?","Kombination aus Längen- und Spannungsänderung; häufigste Kontraktionsform."],
+[10,136,"Wie unterscheiden sich konzentrische und exzentrische Kontraktion?","Konzentrisch: Ursprung und Ansatz nähern sich (Kraft > Gegenkraft). Exzentrisch: sie entfernen sich (Abbremsen)."],
+[10,137,"Was ist isometrische Kontraktion, mit Beispiel?","Spannungsänderung bei gleicher Länge, z. B. Gegenstand auf konstanter Höhe tragen."],
+[10,138,"Was ist isotonische Kontraktion, mit Beispiel?","Längenänderung bei gleicher Spannung, z. B. konstantes Gewicht bewegen."],
+[10,139,"Was bedeuten aktive und passive Muskelinsuffizienz?","Aktiv: Muskel maximal verkürzt, Sarkomere liegen ineinander. Passiv: eine äußere Kraft (z. B. Kontraktur des Antagonisten) verhindert die Bewegung."],
+[10,140,"Welche Eigenschaften haben Typ-I-Fasern?","Slow twitch, rot, tonisch; langsam, ermüden langsam; aerob, viele Mitochondrien, viel Myoglobin, gut durchblutet; Haltearbeit."],
+[10,141,"Welche Eigenschaften haben Typ-IIb-Fasern?","Fast twitch, weiß, phasisch; schnell, ermüden schnell; vorwiegend anaerob (Glykolyse), weniger Mitochondrien/Myoglobin; schnelle kraftvolle Bewegungen."],
+[10,142,"Welche Folgen haben Inaktivität und Training laut Skript für die Fasertypen?","Inaktivität: Typ I Verkürzung, Typ II Atrophie. Training: Typ I bessere Durchblutung; Typ II mehr Myofibrillen und Glykogen."],
+[10,143,"Wie lange reicht der ATP-Vorrat im Muskel?","Etwa 2–3 Sekunden."],
+[10,144,"Welche Reaktion liefert Kreatinphosphat?","KP + ADP → ATP + Kreatin; schnelle ATP-Bereitstellung (Skript: bis ca. 30 s bzw. 12 s)."],
+[10,145,"Was ist die anaerobe Glykolyse und wann setzt sie ein?","Abbau von Glucose/Glykogen zu Laktat ohne O₂ mit ATP-Gewinn; ab ca. 6 s bis 1–2 Min."],
+[10,146,"Wann setzt die aerobe Energiegewinnung ein und was entsteht?","Ab ca. 1–2 Min. bis ca. 60 Min.; Glucose + O₂ → CO₂ + H₂O + ATP."],
+[10,147,"Ab wann trägt die Fettsäureoxidation bei?","Ab ca. 60 Minuten Belastung."],
+[10,148,"Wie unterscheiden sich anaerobe und aerobe ATP-Bildung in der Ausbeute?","Anaerob 2 ATP pro Glucose (Zytosol, Endprodukt Laktat), aerob 32 ATP (Zytosol + Mitochondrium, Endprodukte CO₂ und H₂O)."],
+[10,149,"Welche Myokinase-Reaktion nennt das Skript?","ADP + ADP → ATP + AMP. (Fachlich: Adenylatkinase; nicht mit Adenylatzyklase verwechseln.)"],
+[11,150,"Wie ist eine Sehne aufgebaut und was leistet sie?","Straffes Bindegewebe (70–99 % Kollagen), gefäßarm, durch Septen mit Epi- und Peritendineum unterteilt; überträgt Muskelzug auf den Knochen."],
+[11,151,"Was ist der Unterschied zwischen Zug- und Gleitsehnen?","Gleitsehnen werden über ein Hypomochlion umgeleitet, Zugsehnen nicht."],
+[11,152,"Was messen Golgi-Sehnenorgane?","Die Sehnenspannung (Spannungsdetektoren, „Sehnenspindeln“)."],
+[11,153,"Wie sind Sehnenscheiden aufgebaut und wozu dienen sie?","Außen Membrana fibrosa, innen Membrana synovialis mit Synovia dazwischen; erhöhen die Gleitfähigkeit langer Sehnen."],
+[11,154,"Was ist eine Tendovaginitis?","Sehnenscheidenentzündung, z. B. bei Überlastung."],
+[11,155,"Was sind Sesambeine, und welche Aufgabe haben sie?","Kleine Knochen in Sehnen oder Gelenkkapseln; Führungsschiene und Verlängerung des Hebelarms (z. B. Patella)."],
+[11,156,"Welche Funktionen haben Muskelfaszien?","Sicherung von Form und Lage, reibungsloses Gleiten, teils zusätzlicher Ursprung/Ansatz."],
+[11,157,"Was umfasst der erweiterte Faszienbegriff?","Das ganze Körper-Bindegewebsnetz inkl. Kapseln, Aponeurosen, Bänder, Sehnen; Rezeptoren für Druck, Zug, Temperatur; Kraftübertragung, Körperwahrnehmung, Schmerzweiterleitung, Immunabwehr."],
+[11,158,"Was ist ein Schleimbeutel und was bewirkt er?","Mit Synovia gefüllter Beutel (Aufbau wie Gelenkkapsel); „Wasserkissen“, mindert Druck und Reibung zwischen Sehne/Muskel/Haut und Knochen."],
+[11,159,"Was ist eine Bursitis?","Schleimbeutelentzündung."],
+[11,160,"Wodurch unterscheiden sich Sehnenscheide und Schleimbeutel?","Sehnenscheide umhüllt eine Sehne; Schleimbeutel liegt als Polster zwischen Strukturen."]
+];
+var $=function(i){return document.getElementById(i)};
+var sel={},only=false,ord=[],i=0,flip=false,known={};
+try{known=JSON.parse(localStorage.getItem("ak")||"{}")}catch(e){}
+function save(){try{localStorage.setItem("ak",JSON.stringify(known))}catch(e){}}
+C.forEach(function(n,k){sel[k]=true;var b=document.createElement("button");b.className="chip";b.textContent=n;b.setAttribute("aria-pressed","true");b.onclick=function(){sel[k]=!sel[k];b.setAttribute("aria-pressed",sel[k]);build()};$("chips").appendChild(b)});
+function build(){ord=[];D.forEach(function(c,x){if(sel[c[0]]&&(!only||!known[c[1]]))ord.push(x)});i=0;show()}
+function show(){
+ flip=false;$("card").classList.remove("flip");
+ var n=D.filter(function(c){return sel[c[0]]}).length,k=D.filter(function(c){return sel[c[0]]&&known[c[1]]}).length;
+ $("stat").textContent=k+" von "+n+" gewusst";$("pb").style.width=(n?k/n*100:0)+"%";
+ if(!ord.length){$("f").innerHTML="<div class='done'>Keine Karten in dieser Auswahl.</div>";$("b").textContent="";$("pos").textContent="";return}
+ var c=D[ord[i]];$("f").innerHTML="<span class='tag'>Karte "+c[1]+" · "+C[c[0]]+"</span>";$("f").appendChild(document.createTextNode(c[2]));
+ $("b").textContent=c[3];$("pos").textContent=(i+1)+" / "+ord.length}
+function go(d){if(!ord.length)return;i=(i+d+ord.length)%ord.length;show()}
+function mark(v){if(!ord.length)return;known[D[ord[i]][1]]=v;save();if(only&&v){ord.splice(i,1);if(i>=ord.length)i=0}else i=(i+1)%ord.length;show()}
+function tog(){if(!ord.length)return;flip=!flip;$("card").classList.toggle("flip",flip)}
+$("card").onclick=tog;
+$("ok").onclick=function(){mark(true)};$("no").onclick=function(){mark(false)};
+$("prev").onclick=function(){go(-1)};$("next").onclick=function(){go(1)};
+$("shuf").onclick=function(){for(var a=ord.length-1;a>0;a--){var j=Math.floor(Math.random()*(a+1)),t=ord[a];ord[a]=ord[j];ord[j]=t}i=0;show()};
+$("open").onclick=function(){only=!only;this.setAttribute("aria-pressed",only);this.textContent=only?"Alle Karten":"Nur offene";build()};
+$("reset").onclick=function(){known={};save();build()};
+document.onkeydown=function(e){if(e.key==="ArrowRight")go(1);else if(e.key==="ArrowLeft")go(-1);else if(e.key===" "){e.preventDefault();tog()}};
+build();
+</script></body></html>
